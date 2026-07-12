@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>地下水微洗井助手 V1.0</title>
+  <style>
+    :root{
+      --bg:#f3f7f6;
+      --card:#ffffff;
+      --primary:#0f766e;
+      --primary-dark:#115e59;
+      --line:#d8e5e2;
+      --text:#16302c;
+      --muted:#667b76;
+      --ok:#147d49;
+      --warn:#b45309;
+      --bad:#c62828;
+      --shadow:0 8px 24px rgba(15,118,110,.10);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      line-height:1.45;
+      -webkit-text-size-adjust:100%;
+    }
+    .app{
+      width:min(100%,760px);
+      margin:0 auto;
+      padding:14px 12px calc(24px + env(safe-area-inset-bottom));
+    }
+    header{
+      background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+      color:#fff;
+      padding:20px 18px;
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      margin-bottom:12px;
+    }
+    header h1{font-size:24px;margin:0 0 4px}
+    header p{margin:0;opacity:.9;font-size:14px}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+      margin-bottom:12px;
+      box-shadow:var(--shadow);
+    }
+    .card h2{
+      font-size:18px;
+      margin:0 0 12px;
+      color:var(--primary-dark);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    .field{display:flex;flex-direction:column;gap:6px}
+    label{font-weight:700;font-size:14px}
+    .hint{font-size:12px;color:var(--muted);font-weight:500}
+    input,select{
+      width:100%;
+      min-height:48px;
+      border:1.5px solid #bfd2ce;
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:18px;
+      color:var(--text);
+      background:#fff;
+      outline:none;
+    }
+    input:focus,select:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px rgba(15,118,110,.12);
+    }
+    .actions{
+      display:grid;
+      grid-template-columns:2fr 1fr;
+      gap:10px;
+      margin-top:14px;
+    }
+    button{
+      min-height:50px;
+      border:none;
+      border-radius:13px;
+      font-size:17px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .primary{background:var(--primary);color:#fff}
+    .secondary{background:#e8f1ef;color:var(--primary-dark)}
+    .result-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    .result{
+      border:1px solid var(--line);
+      border-radius:13px;
+      padding:12px;
+      background:#f9fbfb;
+    }
+    .result .name{font-size:13px;color:var(--muted)}
+    .result .value{
+      font-size:22px;
+      font-weight:900;
+      color:var(--primary-dark);
+      margin-top:3px;
+      word-break:break-word;
+    }
+    .status{
+      margin-top:12px;
+      padding:14px;
+      border-radius:13px;
+      font-weight:800;
+      text-align:center;
+      border:1px solid transparent;
+    }
+    .status.neutral{background:#eef3f2;color:var(--muted)}
+    .status.ok{background:#e8f7ef;color:var(--ok);border-color:#b9e5ca}
+    .status.warn{background:#fff6e8;color:var(--warn);border-color:#f0d39d}
+    .status.bad{background:#fff0f0;color:var(--bad);border-color:#efb8b8}
+    .method{
+      margin-top:10px;
+      padding:12px;
+      border-left:5px solid var(--primary);
+      border-radius:10px;
+      background:#f0f8f6;
+      font-size:14px;
+    }
+    .note{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:10px;
+    }
+    .full{grid-column:1/-1}
+    @media (max-width:560px){
+      .app{padding-left:10px;padding-right:10px}
+      header h1{font-size:22px}
+      .grid,.result-grid{grid-template-columns:1fr}
+      .actions{grid-template-columns:1fr 1fr}
+      .result .value{font-size:21px}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>地下水微洗井助手 V1.0</h1>
+      <p>低流量洗井、洩降判定與建議採樣深度</p>
+    </header>
+
+    <section class="card">
+      <h2>井體資料</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="wellDepth">井深（m）</label>
+          <input id="wellDepth" type="number" inputmode="decimal" step="0.001" placeholder="例如 20" />
+        </div>
+        <div class="field">
+          <label for="waterLevelBefore">原始水位深度（m）</label>
+          <input id="waterLevelBefore" type="number" inputmode="decimal" step="0.001" placeholder="例如 10.505" />
+        </div>
+        <div class="field">
+          <label for="screenTop">井篩上緣（m）</label>
+          <input id="screenTop" type="number" inputmode="decimal" step="0.001" placeholder="例如 14" />
+        </div>
+        <div class="field">
+          <label for="screenBottom">井篩下緣（m）</label>
+          <input id="screenBottom" type="number" inputmode="decimal" step="0.001" placeholder="例如 20" />
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>微洗井資料</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="flowRate">抽水流量（L/min）</label>
+          <input id="flowRate" type="number" inputmode="decimal" step="0.001" placeholder="例如 0.5" />
+        </div>
+        <div class="field">
+          <label for="purgeTime">洗井時間（min）</label>
+          <input id="purgeTime" type="number" inputmode="decimal" step="0.1" placeholder="例如 30" />
+        </div>
+        <div class="field full">
+          <label for="waterLevelAfter">洗井後水位深度（m）</label>
+          <input id="waterLevelAfter" type="number" inputmode="decimal" step="0.001" placeholder="例如 10.800" />
+          <span class="hint">數值越大，代表水位下降越深。</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" type="button" onclick="calculate()">計算結果</button>
+        <button class="secondary" type="button" onclick="clearAll()">清除</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>計算結果</h2>
+      <div class="result-grid">
+        <div class="result">
+          <div class="name">井篩總長</div>
+          <div class="value" id="screenLength">—</div>
+        </div>
+        <div class="result">
+          <div class="name">最大允許洩降（井篩長度 1/8）</div>
+          <div class="value" id="maxDrawdown">—</div>
+        </div>
+        <div class="result">
+          <div class="name">實際洩降深度</div>
+          <div class="value" id="drawdown">—</div>
+        </div>
+        <div class="result">
+          <div class="name">總抽水量</div>
+          <div class="value" id="totalVolume">—</div>
+        </div>
+        <div class="result full">
+          <div class="name">建議採樣深度</div>
+          <div class="value" id="sampleDepth">—</div>
+        </div>
+      </div>
+
+      <div id="status" class="status neutral">請輸入資料後按「計算結果」</div>
+      <div id="method" class="method">採樣深度判斷方式會顯示在這裡。</div>
+      <div class="note">計算門檻採用：最大允許洩降＝井篩總長 ÷ 8。現場仍應依採樣計畫、設備條件與主管機關要求執行。</div>
+    </section>
+  </main>
+
+<script>
+  function num(id){
+    const v = parseFloat(document.getElementById(id).value);
+    return Number.isFinite(v) ? v : null;
+  }
+
+  function fmt(v, digits = 3){
+    return Number.isFinite(v) ? v.toFixed(digits) : "—";
+  }
+
+  function setText(id, text){
+    document.getElementById(id).textContent = text;
+  }
+
+  function calculate(){
+    const wellDepth = num("wellDepth");
+    const before = num("waterLevelBefore");
+    const top = num("screenTop");
+    const bottom = num("screenBottom");
+    const flow = num("flowRate");
+    const time = num("purgeTime");
+    const after = num("waterLevelAfter");
+
+    const required = [wellDepth,before,top,bottom,flow,time,after];
+    if(required.some(v => v === null)){
+      showStatus("請完整輸入所有欄位。","bad");
+      return;
+    }
+
+    if(wellDepth <= 0 || flow < 0 || time < 0 || before < 0 || after < 0 || top < 0 || bottom < 0){
+      showStatus("輸入值不可為負數，井深必須大於 0。","bad");
+      return;
+    }
+
+    if(!(top < bottom && bottom <= wellDepth)){
+      showStatus("井篩資料有誤：井篩上緣必須小於下緣，且下緣不得超過井深。","bad");
+      return;
+    }
+
+    if(before > wellDepth || after > wellDepth){
+      showStatus("水位深度不得超過井深。","bad");
+      return;
+    }
+
+    const screenLength = bottom - top;
+    const maxDrawdown = screenLength / 8;
+    const drawdown = after - before;
+    const totalVolume = flow * time;
+
+    let sampleDepth;
+    let methodText;
+
+    if(after <= top){
+      sampleDepth = (top + bottom) / 2;
+      methodText = "洗井後水位仍高於井篩上緣，建議採樣位置採井篩中央。";
+    }else if(after < bottom){
+      sampleDepth = after + (bottom - after) / 2;
+      methodText = "洗井後水位位於井篩內，建議採樣位置採洗井後水位至井篩下緣之中點。";
+    }else{
+      sampleDepth = null;
+      methodText = "洗井後水位已達到或低於井篩下緣，井篩可能沒有足夠水柱，請檢查現場狀況。";
+    }
+
+    setText("screenLength", fmt(screenLength) + " m");
+    setText("maxDrawdown", fmt(maxDrawdown) + " m");
+    setText("drawdown", fmt(drawdown) + " m");
+    setText("totalVolume", fmt(totalVolume, 2) + " L");
+    setText("sampleDepth", sampleDepth === null ? "無法建議" : fmt(sampleDepth) + " m");
+    setText("method", methodText);
+
+    if(drawdown < 0){
+      showStatus("洗井後水位比原始水位淺，實際水位上升 " + fmt(Math.abs(drawdown)) + " m。請確認輸入值。","warn");
+    }else if(after >= bottom){
+      showStatus("警告：洗井後水位已達到或低於井篩下緣。","bad");
+    }else if(drawdown <= maxDrawdown){
+      showStatus("符合設定門檻：洩降未超過井篩總長的 1/8。","ok");
+    }else{
+      showStatus("超過設定門檻：洩降已超過井篩總長的 1/8。","bad");
+    }
+  }
+
+  function showStatus(text, type){
+    const el = document.getElementById("status");
+    el.textContent = text;
+    el.className = "status " + type;
+  }
+
+  function clearAll(){
+    document.querySelectorAll("input").forEach(el => el.value = "");
+    ["screenLength","maxDrawdown","drawdown","totalVolume","sampleDepth"].forEach(id => setText(id,"—"));
+    showStatus("請輸入資料後按「計算結果」","neutral");
+    setText("method","採樣深度判斷方式會顯示在這裡。");
+    document.getElementById("wellDepth").focus();
+  }
+</script>
+</body>
+</html>
